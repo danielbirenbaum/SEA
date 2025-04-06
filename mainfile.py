@@ -1,5 +1,6 @@
 from colors import Color as C
 import time
+from datetime import datetime
 import csv
 import os
 import tabulate
@@ -15,7 +16,29 @@ def isEmpty():
             return True
 
 def expirationWarning():
-    pass
+    with open('data/data.csv', mode = 'r') as data:
+        listOfAllContent = []
+        remainingTime = []
+        csvReader = csv.reader(data)
+        headerData = next(csvReader)
+        for row in csvReader:
+            listOfAllContent.append(row)     
+        for i in listOfAllContent:
+            name = i[0]
+            dia = int(i[2][0:2])
+            mes = int(i[2][2:4])
+            ano = int(i[2][4:])
+            eDate = datetime(ano, mes, dia)
+            currentDate = datetime.now()
+            dif = eDate - currentDate
+            remainingTime.append([name,dif.days + 1]) 
+            
+        for i in remainingTime:
+            if i[1] <= 3: 
+                print(C.FAIL + "ALERTA, ALIMENTO PRÓXIMO DA VALIDADE:")
+                print(f"{i[0]} em {i[1]} dias")
+                print(C.ENDC)
+                  
 
 def insert():
     pass
@@ -77,7 +100,7 @@ def getExpirationDate():
             listOfExpiration.append(l)
             
         
-        table = tabulate.tabulate(listOfExpiration,headers=header, tablefmt= "pipe", colalign=('center','center','center'))
+        table = tabulate.tabulate(listOfExpiration,headers=header, tablefmt= "pipe", colalign=('center','center','center', 'center'))
         print(C.WARNING + table + C.ENDC)
 
 def getRoutine():
@@ -90,6 +113,7 @@ def main():
     online = True
     while online:
         print(C.OKBLUE + "BEM-VINDO AO SISTEMA DE ESTOQUE AUTOMÁTICO" + C.ENDC)
+        print("")
         expirationWarning()
         print("")
         print(C.OKGREEN + "Escolha uma opção:"+ C.ENDC)
