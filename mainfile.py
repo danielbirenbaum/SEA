@@ -16,7 +16,7 @@ def isEmpty():
             return True
 
 def expirationWarning():
-    with open('data/data.csv', mode = 'r') as data:
+    with open('data/data.csv', mode = 'r', encoding='utf-8') as data:
         listOfAllContent = []
         remainingTime = []
         csvReader = csv.reader(data)
@@ -32,12 +32,19 @@ def expirationWarning():
             currentDate = datetime.now()
             dif = eDate - currentDate
             remainingTime.append([name,dif.days + 1]) 
+        for i in remainingTime:
+            if i[1] <= 3:
+                print(C.FAIL + "ALERTA, ALIMENTO(S) PRÓXIMO DA VALIDADE:")
+                break
             
         for i in remainingTime:
-            if i[1] <= 3: 
-                print(C.FAIL + "ALERTA, ALIMENTO PRÓXIMO DA VALIDADE:")
-                print(f"{i[0]} em {i[1]} dias")
-                print(C.ENDC)
+            if i[1] <= 3 and i[1] > 0: 
+                print(f"{i[0]} em {i[1]} dia(s)")
+            if i[1] == 0:
+                print(f"{i[0]} com prazo de validade hoje!")
+            if i[1] < 0:
+                print(f"{i[0]} com prazo de validade há {(-1)*i[1]} dia(s)")
+        print(C.ENDC)
                   
 
 def insert():
@@ -51,7 +58,7 @@ def getProducts():
         print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
         return
 
-    with open('data/data.csv', mode = 'r') as data:
+    with open('data/data.csv', mode = 'r', encoding='utf-8') as data:
         listOfAllContent = []
         listOfNamesAndQnt = []
         csvReader = csv.reader(data)
@@ -63,7 +70,10 @@ def getProducts():
             l = []
             l.append(i[0]) 
             if i[3] == '1':
-                l.append(f'{i[1]} itens')
+                if int(i[1]) == 1:
+                    l.append(f'{i[1]} item')
+                else:
+                    l.append(f'{i[1]} itens')
             else:
                 l.append(f'{i[1]} gramas')
             listOfNamesAndQnt.append(l)
@@ -77,7 +87,7 @@ def getExpirationDate():
         print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
         return
     
-    with open('data/data.csv', mode = 'r') as data:
+    with open('data/data.csv', mode = 'r', encoding='utf-8') as data:
         listOfAllContent = []
         listOfExpiration = []
         csvReader = csv.reader(data)
