@@ -5,6 +5,14 @@ import csv
 import os
 import tabulate
 
+online = True
+
+def verifyFile():
+    with open('data/data.csv', mode = 'r+', encoding='utf-8') as data:
+        content = data.read()
+        if not content.endswith('\n'):
+            data.write("\n")
+
 def isEmpty():
     with open('data/data.csv', mode = 'r') as data:
         c = 0
@@ -39,16 +47,118 @@ def expirationWarning():
             
         for i in remainingTime:
             if i[1] <= 3 and i[1] > 0: 
-                print(f"{i[0]} em {i[1]} dia(s)")
+                print(f"{i[0]} vence em {i[1]} dia(s)")
             if i[1] == 0:
                 print(f"{i[0]} com prazo de validade hoje!")
             if i[1] < 0:
-                print(f"{i[0]} com prazo de validade há {(-1)*i[1]} dia(s)")
+                print(f"{i[0]} venceu há {(-1)*i[1]} dia(s)")
         print(C.ENDC)
                   
 
 def insert():
-    pass
+    verifyFile()
+    insert = True
+    nome = False
+    quantidade = False
+    boolValidade = False
+    quantificavel = False
+    date = ""
+    newRow = []
+    while insert:
+        try:
+            if not nome:
+                print(C.OKCYAN + "Digite o nome do produto:" + C.ENDC)
+                nome = input(">>> ")
+                if nome == "":
+                    nome = False
+                    print(C.FAIL + "DIGITE UM NOME!" + C.ENDC)
+                    time.sleep(0.8)
+                    os.system('cls')
+                    continue
+            if not quantificavel:
+                print(C.OKCYAN + "Produto medido em gramatura ou em quantidade?")
+                print("1 - Gramas")
+                print("2 - Quantidade") 
+                print("3 - Mililitros" + C.ENDC) 
+                quantificavel = int(input(">>> "))
+                if quantificavel == 1 or quantificavel == 2 or quantificavel == 3:
+                    pass
+                else:
+                    quantificavel = False
+                    print(C.FAIL + "DIGITE 1,2 ou 3" + C.ENDC)
+                    time.sleep(0.8)
+                    os.system('cls')
+                    continue
+            if not quantidade:
+                if quantificavel == 1:
+                    print(C.OKCYAN + f"Quantos gramas de {nome}?" + C.ENDC)
+                    print(C.WARNING + "Caso seja valor decimal, digite com '.' ao invés de ',' " + C.ENDC)
+                    quantidade = float(input(">>> "))
+                    if quantidade == 0:
+                        print(C.FAIL + "NÃO É POSSÍVEL COLOCAR 0 GRAMAS" + C.ENDC)
+                        time.sleep(0.8)
+                        os.system('cls')
+                        quantidade = False
+                        continue
+                elif quantificavel == 2:
+                    print(C.OKCYAN + f"Quanto de {nome}?" + C.ENDC)
+                    quantidade = int(input(">>> "))
+                    if quantidade == 0:
+                        print(C.FAIL + "NÃO É POSSÍVEL COLOCAR 0 ITENS" + C.ENDC)
+                        time.sleep(0.8)
+                        os.system('cls')
+                        quantidade = False
+                        continue
+                else:
+                    print(C.OKCYAN + f"Quantos mililitros de {nome}?" + C.ENDC)
+                    quantidade = int(input(">>> "))
+                    if quantidade == 0:
+                        print(C.FAIL + "NÃO É POSSÍVEL COLOCAR 0 MILILITROS" + C.ENDC)
+                        time.sleep(0.8)
+                        os.system('cls')
+                        quantidade = False
+                        continue
+            if not boolValidade:
+                print(C.OKCYAN + "Agora insira a data de validade do produto:" + C.ENDC)
+                print(C.OKGREEN + "Dia:" + C.ENDC)
+               
+                dia = (input(">>> "))
+                print(C.OKGREEN + "Mês:" + C.ENDC)
+                mes = (input(">>> "))
+                print(C.OKGREEN + "Ano:" + C.ENDC)
+                ano = (input(">>> "))
+                date = str(dia) + str(mes) + str(ano)
+                boolValidade = True
+            
+            if boolValidade and nome and quantidade and quantificavel:
+                newRow.append(str(nome))
+                newRow.append(str(quantidade))
+                newRow.append(str(date))
+                newRow.append(str(quantificavel - 1))
+                count = 0
+                with open('data/data.csv', mode='r', encoding='utf-8') as data:
+                    csvReader = csv.reader(data)
+                    header = next(csvReader)
+                    listOfAllContent = []
+                    for row in csvReader:
+                        listOfAllContent.append(row)
+                    for i in listOfAllContent:
+                        count = int(i[4])
+                newRow.append(str(count + 1))
+                with open('data/data.csv', mode = 'a', encoding='utf-8', newline='') as data:
+                    writer = csv.writer(data, delimiter=',')
+                    writer.writerow(newRow)
+                    
+            
+            insert = False
+        except ValueError:
+            print(C.FAIL + "INPUT INVÁLIDO, POR FAVOR TENTE NOVAMENTE" + C.ENDC)
+            time.sleep(0.8)
+            os.system('cls')
+        except KeyboardInterrupt:
+            print("")
+            print(C.FAIL + "RETORNANDO AO MENU PRINCIPAL..." + C.ENDC)
+            return
 
 def remove():
     pass
@@ -74,8 +184,11 @@ def getProducts():
                     l.append(f'{i[1]} item')
                 else:
                     l.append(f'{i[1]} itens')
-            else:
+            elif i[3] == '0':
                 l.append(f'{i[1]} gramas')
+            else:
+                l.append(f'{i[1]} mililitros')
+
             listOfNamesAndQnt.append(l)
 
         table = tabulate.tabulate(listOfNamesAndQnt,headers=header, tablefmt= "pipe", colalign=('center','center'))
@@ -119,13 +232,12 @@ def getRoutine():
 def getList():
     pass
 
-def main():
-    online = True
+def main(): 
+    global online
     while online:
         print(C.OKBLUE + "BEM-VINDO AO SISTEMA DE ESTOQUE AUTOMÁTICO" + C.ENDC)
         print("")
         expirationWarning()
-        print("")
         print(C.OKGREEN + "Escolha uma opção:"+ C.ENDC)
         print("1 - Inserir")
         print("2 - Remover")
@@ -143,11 +255,20 @@ def main():
             os.system('cls')
             online =  False
         elif choice == '1':
+            os.system('cls')
             insert()
+            print("")
+            print("Pressione enter para continuar")
+            input(">>> ")
+            os.system('cls')
         
         elif choice == '2':
+            os.system('cls')
             remove()
-
+            print("")
+            print("Pressione enter para continuar")
+            input(">>>")
+            os.system('cls')
         elif choice == '3':
             os.system('cls')
             getProducts()
