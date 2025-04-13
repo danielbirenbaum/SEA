@@ -168,6 +168,7 @@ def insert():
             return
 
 def remove():
+    if isEmpty(): return print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
     name = False
     id = False
     listOfAllContent = []
@@ -218,7 +219,6 @@ def remove():
                             rowToRemove.append(i)
                     newFile = [row for row in listOfAllContent if rowToRemove[0][4] not in row[4]]
                     newFile.insert(0,header)
-                    print(newFile)
                     
                     with open("data/data.csv", "w", newline="") as file:
                         writer = csv.writer(file)
@@ -228,8 +228,7 @@ def remove():
             else:
                 print(f"{C.FAIL}Removendo{C.ENDC} {C.OKGREEN}{name}{C.ENDC}")
                 newFile = [row for row in listOfAllContent if rowToRemove[0][4] not in row[4]]
-                newFile.insert(0,header)
-                print(newFile)    
+                newFile.insert(0,header)                   
                 with open("data/data.csv", "w", newline="") as file:
                     writer = csv.writer(file)
                     writer.writerows(newFile)
