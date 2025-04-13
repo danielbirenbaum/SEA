@@ -3,9 +3,16 @@ import time
 from datetime import datetime
 import csv
 import os
-import tabulate
+import tabulate # type: ignore
+import platform
 
 online = True
+
+def clearT():
+    if platform.system() == "Windows":
+        os.system('cls')
+    else:
+        os.system('clear')
 
 def verifyFile():
     with open('data/data.csv', mode = 'r+', encoding='utf-8') as data:
@@ -73,7 +80,7 @@ def insert():
                     nome = False
                     print(C.FAIL + "DIGITE UM NOME!" + C.ENDC)
                     time.sleep(0.8)
-                    os.system('cls')
+                    clearT()
                     continue
             if not quantificavel:
                 print(C.OKCYAN + "Produto medido em gramatura ou em quantidade?")
@@ -87,7 +94,7 @@ def insert():
                     quantificavel = False
                     print(C.FAIL + "DIGITE 1,2 ou 3" + C.ENDC)
                     time.sleep(0.8)
-                    os.system('cls')
+                    clearT()
                     continue
             if not quantidade:
                 if quantificavel == 1:
@@ -97,7 +104,7 @@ def insert():
                     if quantidade == 0:
                         print(C.FAIL + "NÃO É POSSÍVEL COLOCAR 0 GRAMAS" + C.ENDC)
                         time.sleep(0.8)
-                        os.system('cls')
+                        clearT()
                         quantidade = False
                         continue
                 elif quantificavel == 2:
@@ -106,7 +113,7 @@ def insert():
                     if quantidade == 0:
                         print(C.FAIL + "NÃO É POSSÍVEL COLOCAR 0 ITENS" + C.ENDC)
                         time.sleep(0.8)
-                        os.system('cls')
+                        clearT()
                         quantidade = False
                         continue
                 else:
@@ -115,7 +122,7 @@ def insert():
                     if quantidade == 0:
                         print(C.FAIL + "NÃO É POSSÍVEL COLOCAR 0 MILILITROS" + C.ENDC)
                         time.sleep(0.8)
-                        os.system('cls')
+                        clearT()
                         quantidade = False
                         continue
             if not boolValidade:
@@ -154,14 +161,97 @@ def insert():
         except ValueError:
             print(C.FAIL + "INPUT INVÁLIDO, POR FAVOR TENTE NOVAMENTE" + C.ENDC)
             time.sleep(0.8)
-            os.system('cls')
+            clearT()
         except KeyboardInterrupt:
             print("")
             print(C.FAIL + "RETORNANDO AO MENU PRINCIPAL..." + C.ENDC)
             return
 
 def remove():
-    pass
+    name = False
+    id = False
+    listOfAllContent = []
+    equalName = []
+    listId = []
+    rowToRemove = []
+    newFile = []
+    header = []
+    count = 0
+    while True:
+        try:
+            if not name:
+                print(C.OKGREEN + f"Digite o nome do produto a ser {C.FAIL}removido{C.ENDC}:" + C.ENDC)
+                value = input(">>> ")
+                if value == "":
+                    print(C.FAIL + "DIGITE UM NOME VÁLIDO!" + C.ENDC)
+                    continue
+                else:
+                    name = value
+                    with open('data/data.csv', 'r', encoding='utf-8') as data:
+                        csvReader = csv.reader(data)
+                        header = next(csvReader) 
+                        nameExist = False 
+                        for row in csvReader:
+                            listOfAllContent.append(row)
+                            if row[0] == name:
+                                nameExist = True
+                                count += 1
+                                equalName.append([row[0],row[1],row[2],row[4]])
+                                listId.append(row[4])
+                                rowToRemove.append(row)
+                                
+            if count > 1:
+                table = tabulate.tabulate(equalName ,headers=['Nome','Quantidade', 'Validade', 'ID'], tablefmt= "pipe", colalign=('center','center','center','center'))
+                print(C.WARNING + table + C.ENDC)
+                print("")
+                
+                print(C.OKGREEN + "Digite o ID do produto que deseja remover:" + C.ENDC)
+                idValue = int(input(">>> "))
+                if str(idValue) not in listId:
+                    print(C.FAIL + "DIGITE UM ID VÁLIDO" + C.ENDC)
+                    continue
+                else:
+                    print(f"{C.FAIL}Removendo{C.ENDC} {C.OKGREEN}{name}{C.ENDC}")
+                    for i in rowToRemove:
+                        if i[4] == str(idValue):
+                            rowToRemove = []
+                            rowToRemove.append(i)
+                    newFile = [row for row in listOfAllContent if rowToRemove[0][4] not in row[4]]
+                    newFile.insert(0,header)
+                    print(newFile)
+                    
+                    with open("data/data.csv", "w", newline="") as file:
+                        writer = csv.writer(file)
+                        writer.writerows(newFile)
+                    return
+
+            else:
+                print(f"{C.FAIL}Removendo{C.ENDC} {C.OKGREEN}{name}{C.ENDC}")
+                newFile = [row for row in listOfAllContent if rowToRemove[0][4] not in row[4]]
+                newFile.insert(0,header)
+                print(newFile)    
+                with open("data/data.csv", "w", newline="") as file:
+                    writer = csv.writer(file)
+                    writer.writerows(newFile)
+                return
+            
+                    
+
+        except ValueError:
+            print(C.FAIL + "INPUT INVÁLIDO, POR FAVOR TENTE NOVAMENTE" + C.ENDC)
+            time.sleep(0.8)
+            clearT()
+        except KeyboardInterrupt:
+            print("")
+            print(C.FAIL + "RETORNANDO AO MENU PRINCIPAL..." + C.ENDC)
+            return
+        except IndexError:
+            print("")
+            clearT()
+            print(C.FAIL + "RETORNE E DIGITE UM VALOR VÁLIDO" + C.ENDC)
+            time.sleep(1)
+            clearT()
+            return
 
 def getProducts():
     if isEmpty():
@@ -248,42 +338,43 @@ def main():
         print("7 - Sair do programa")
         choice = input(">>> ")
         
+        
         if choice == '7':
-            os.system('cls')
+            clearT()
             print(C.FAIL + "FECHANDO.." + C.ENDC)
             time.sleep(0.8)
-            os.system('cls')
+            clearT()
             online =  False
         elif choice == '1':
-            os.system('cls')
+            clearT()
             insert()
             print("")
             print("Pressione enter para continuar")
             input(">>> ")
-            os.system('cls')
+            clearT()
         
         elif choice == '2':
-            os.system('cls')
+            clearT()
             remove()
             print("")
             print("Pressione enter para continuar")
             input(">>>")
-            os.system('cls')
+            clearT()
         elif choice == '3':
-            os.system('cls')
+            clearT()
             getProducts()
             print("")
             print("Pressione enter para continuar")
             input(">>> ")
-            os.system('cls')
+            clearT()
 
         elif choice == '4':
-            os.system('cls')
+            clearT()
             getExpirationDate()
             print("")
             print("Pressione enter para continuar")
             input(">>> ")
-            os.system('cls')            
+            clearT()            
         elif choice == '5':
             getRoutine()
         elif choice == '6':
@@ -292,7 +383,7 @@ def main():
             print(C.FAIL + "ERRO:")
             print("ESCOLHA UMA OPÇÃO VÁLIDA" + C.ENDC)
             time.sleep(1)
-            os.system('cls')
+            clearT()
         
         
 
