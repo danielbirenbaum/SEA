@@ -101,7 +101,7 @@ def insert():
                     continue
             if not quantidade:
                 unidade = ["gramas", "itens", "mililitros"][quantificavel - 1]
-                quantidade = getValidInput(C.OKCYAN + f"Quantos {unidade} de {nome}?\n>>> " + C.ENDC, float if quantificavel == 1 else int)
+                quantidade = getValidInput(C.OKCYAN + f"Quantos {unidade} de {nome}?\n>>> " + C.ENDC, int if quantificavel == 2 else float)
                 if quantidade <= 0:
                     print(C.FAIL + f"NÃO É POSSÍVEL COLOCAR ESSA QUANTIDADE DE {unidade.upper()}" + C.ENDC)
                     time.sleep(0.8)
