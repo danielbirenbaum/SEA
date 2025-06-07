@@ -6,14 +6,24 @@ import os
 import tabulate # type: ignore
 import platform
 
-online = True
+#Funcao para pegar um input e tratá-lo
+def getValidInput(prompt,inputType,errorMessage = "Entrada Inválida"):
+    while True:
+        try:
+            value = input(prompt)
+            return inputType(value)
+        except ValueError:
+            print(errorMessage)
+            time.sleep(0.8)
 
+# Função para limpar o terminal, independente do sistema (não funciona direito ainda)
 def clearT():
     if platform.system() == "Windows":
         os.system('cls')
     else:
         os.system('clear')
 
+#Verifica se há uma linha vazia para poder escrever uma nova linha
 def verifyFile():
     with open('data/data.csv', mode = 'r+', encoding='utf-8') as data:
         content = data.read()
@@ -64,67 +74,39 @@ def expirationWarning():
 
 def insert():
     verifyFile()
-    insert = True
     nome = False
     quantidade = False
     boolValidade = False
     quantificavel = False
     date = ""
     newRow = []
-    while insert:
+    while True:
         try:
             if not nome:
-                print(C.OKCYAN + "Digite o nome do produto:" + C.ENDC)
-                nome = input(">>> ")
-                if nome == "":
-                    nome = False
+                nome = input(C.OKCYAN + "Digite o nome do produto:\n>>> " + C.ENDC).strip()
+                if not nome:
                     print(C.FAIL + "DIGITE UM NOME!" + C.ENDC)
                     time.sleep(0.8)
                     clearT()
                     continue
             if not quantificavel:
                 print(C.OKCYAN + "Produto medido em gramatura ou em quantidade?")
-                print("1 - Gramas")
-                print("2 - Quantidade") 
-                print("3 - Mililitros" + C.ENDC) 
-                quantificavel = int(input(">>> "))
-                if quantificavel == 1 or quantificavel == 2 or quantificavel == 3:
-                    pass
-                else:
+                print("1 - Gramas\n2 - Quantidade\n3 - Mililitros" + C.ENDC)
+                quantificavel = getValidInput(C. OKCYAN + ">>> " + C.ENDC ,int, C.FAIL + "DIGITE 1, 2 ou 3" + C.ENDC)
+                if quantificavel not in [1,2,3]:
                     quantificavel = False
-                    print(C.FAIL + "DIGITE 1,2 ou 3" + C.ENDC)
+                    print(C.FAIL + "DIGITE 1, 2 ou 3" + C.ENDC)
                     time.sleep(0.8)
                     clearT()
                     continue
             if not quantidade:
-                if quantificavel == 1:
-                    print(C.OKCYAN + f"Quantos gramas de {nome}?" + C.ENDC)
-                    print(C.WARNING + "Caso seja valor decimal, digite com '.' ao invés de ',' " + C.ENDC)
-                    quantidade = float(input(">>> "))
-                    if quantidade == 0:
-                        print(C.FAIL + "NÃO É POSSÍVEL COLOCAR 0 GRAMAS" + C.ENDC)
-                        time.sleep(0.8)
-                        clearT()
-                        quantidade = False
-                        continue
-                elif quantificavel == 2:
-                    print(C.OKCYAN + f"Quanto de {nome}?" + C.ENDC)
-                    quantidade = int(input(">>> "))
-                    if quantidade == 0:
-                        print(C.FAIL + "NÃO É POSSÍVEL COLOCAR 0 ITENS" + C.ENDC)
-                        time.sleep(0.8)
-                        clearT()
-                        quantidade = False
-                        continue
-                else:
-                    print(C.OKCYAN + f"Quantos mililitros de {nome}?" + C.ENDC)
-                    quantidade = int(input(">>> "))
-                    if quantidade == 0:
-                        print(C.FAIL + "NÃO É POSSÍVEL COLOCAR 0 MILILITROS" + C.ENDC)
-                        time.sleep(0.8)
-                        clearT()
-                        quantidade = False
-                        continue
+                unidade = ["gramas", "itens", "mililitros"][quantificavel - 1]
+                quantidade = getValidInput(C.OKCYAN + f"Quantos {unidade} de {nome}?\n>>> " + C.ENDC, float if quantificavel == 1 else int)
+                if quantidade <= 0:
+                    print(C.FAIL + f"NÃO É POSSÍVEL COLOCAR ESSA QUANTIDADE DE {unidade.upper()}" + C.ENDC)
+                    time.sleep(0.8)
+                    quantidade = 0
+                    continue
             if not boolValidade:
                 print(C.OKCYAN + "Agora insira a data de validade do produto:" + C.ENDC)
                 print(C.OKGREEN + "Dia:" + C.ENDC)
@@ -157,7 +139,7 @@ def insert():
                     writer.writerow(newRow)
                     
             
-            insert = False
+            break
         except ValueError:
             print(C.FAIL + "INPUT INVÁLIDO, POR FAVOR TENTE NOVAMENTE" + C.ENDC)
             time.sleep(0.8)
@@ -170,7 +152,8 @@ def insert():
 def remove():
     if isEmpty(): return print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
     name = False
-    id = False
+    quantity = False
+    remainingQnt = False
     listOfAllContent = []
     equalName = []
     listId = []
@@ -195,12 +178,18 @@ def remove():
                         for row in csvReader:
                             listOfAllContent.append(row)
                             if row[0] == name:
+                                quantity = row[1]
                                 nameExist = True
                                 count += 1
                                 equalName.append([row[0],row[1],row[2],row[4]])
                                 listId.append(row[4])
                                 rowToRemove.append(row)
-                                
+            #Falta terminar funcionalidade de remover alguma quantidade
+            #Código muito mal otimizado
+            if not(remainingQnt):
+                print(C.OKGREEN + f"Temos {quantity} de {name}, quanto deve ser {C.FAIL}removido{C.ENDC}?" + C.ENDC)
+                value = float(input(">>> "))   
+                remainingQnt = float(quantity) - value       
             if count > 1:
                 table = tabulate.tabulate(equalName ,headers=['Nome','Quantidade', 'Validade', 'ID'], tablefmt= "pipe", colalign=('center','center','center','center'))
                 print(C.WARNING + table + C.ENDC)
@@ -322,7 +311,7 @@ def getList():
     pass
 
 def main(): 
-    global online
+    online = True
     while online:
         print(C.OKBLUE + "BEM-VINDO AO SISTEMA DE ESTOQUE AUTOMÁTICO" + C.ENDC)
         print("")
@@ -384,8 +373,6 @@ def main():
             time.sleep(1)
             clearT()
         
-        
-
 
 if __name__ == '__main__':
     main()
