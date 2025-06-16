@@ -7,7 +7,8 @@ import tabulate # type: ignore
 import platform
 
 #Funcao para pegar um input e tratá-lo
-def getValidInput(prompt,inputType,errorMessage = "Entrada Inválida"):
+#O tratamento NÃO É ESPECIAL, há apenas a verificação do tipo, logo, pode ser necessário verificar outros fatores
+def getValidInput(prompt,inputType,errorMessage = C.FAIL + "ENTRADA INVALIDA" + C.ENDC):
     while True:
         try:
             value = input(prompt)
@@ -16,14 +17,14 @@ def getValidInput(prompt,inputType,errorMessage = "Entrada Inválida"):
             print(errorMessage)
             time.sleep(0.8)
 
-# Função para limpar o terminal, independente do sistema (não funciona direito ainda)
+# Função para limpar o terminal, independente do sistema (não funciona para sem ser windows, porém como a correção será no windows manterei)
 def clearT():
     if platform.system() == "Windows":
         os.system('cls')
     else:
         os.system('clear')
 
-#Verifica se há uma linha vazia para poder escrever uma nova linha
+#Verifica se há uma linha vazia para poder escrever uma nova linha(código estava escrevendo na mesma linha)
 def verifyFile():
     with open('data/data.csv', mode = 'r+', encoding='utf-8') as data:
         content = data.read()
@@ -71,7 +72,7 @@ def expirationWarning():
                 print(f"{i[0]} venceu há {(-1)*i[1]} dia(s)")
         print(C.ENDC)
                   
-
+#Função insert já otimizada, com as mudanças propostas
 def insert():
     verifyFile()
     nome = False
@@ -108,35 +109,29 @@ def insert():
                     quantidade = 0
                     continue
             if not boolValidade:
-                print(C.OKCYAN + "Agora insira a data de validade do produto:" + C.ENDC)
-                print(C.OKGREEN + "Dia:" + C.ENDC)
-               
-                dia = (input(">>> "))
-                print(C.OKGREEN + "Mês:" + C.ENDC)
-                mes = (input(">>> "))
-                print(C.OKGREEN + "Ano:" + C.ENDC)
-                ano = (input(">>> "))
-                date = str(dia) + str(mes) + str(ano)
-                boolValidade = True
-            
-            if boolValidade and nome and quantidade and quantificavel:
-                newRow.append(str(nome))
-                newRow.append(str(quantidade))
-                newRow.append(str(date))
-                newRow.append(str(quantificavel - 1))
-                count = 0
-                with open('data/data.csv', mode='r', encoding='utf-8') as data:
-                    csvReader = csv.reader(data)
-                    header = next(csvReader)
-                    listOfAllContent = []
-                    for row in csvReader:
-                        listOfAllContent.append(row)
-                    for i in listOfAllContent:
+                dia = getValidInput(C.OKCYAN + "Dia:\n>>> " + C.ENDC, str)
+                mes = getValidInput(C.OKCYAN +"Mês:\n>>> " + C.ENDC, str)
+                ano = getValidInput(C.OKCYAN +"Ano:\n>>> " + C.ENDC, str)
+                date = f"{dia}{mes}{ano}"
+
+            newRow.append(str(nome))
+            newRow.append(str(quantidade))
+            newRow.append(str(date))
+            newRow.append(str(quantificavel - 1))
+            count = 0
+            with open('data/data.csv', mode='r', encoding='utf-8') as data:
+                csvReader = csv.reader(data)
+                header = next(csvReader)
+                listOfAllContent = []
+                for row in csvReader:
+                    listOfAllContent.append(row)
+                for i in listOfAllContent:
+                    if (count < int(i[4])):
                         count = int(i[4])
-                newRow.append(str(count + 1))
-                with open('data/data.csv', mode = 'a', encoding='utf-8', newline='') as data:
-                    writer = csv.writer(data, delimiter=',')
-                    writer.writerow(newRow)
+            newRow.append(str(count + 1))
+            with open('data/data.csv', mode = 'a', encoding='utf-8', newline='') as data:
+                writer = csv.writer(data, delimiter=',')
+                writer.writerow(newRow)
                     
             
             break
