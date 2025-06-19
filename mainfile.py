@@ -16,66 +16,39 @@ def getValidInput(prompt,inputType,errorMessage = C.FAIL + "ENTRADA INVALIDA" + 
         except ValueError:
             print(errorMessage)
             time.sleep(0.8)
-
-# Função para limpar o terminal, independente do sistema (não funciona para sem ser windows, porém como a correção será no windows manterei)
+# Função para limpar o terminal (Apenas windows)
 def clearT():
-    if platform.system() == "Windows":
-        os.system('cls')
-    else:
-        os.system('clear')
-
+    os.system('cls')
+'''
 #Verifica se há uma linha vazia para poder escrever uma nova linha(código estava escrevendo na mesma linha)
 def verifyFile():
     with open('data/data.csv', mode = 'r+', encoding='utf-8') as data:
         content = data.read()
         if not content.endswith('\n'):
             data.write("\n")
-
-def isEmpty():
-    with open('data/data.csv', mode = 'r') as data:
-        c = 0
-        csvReader = csv.reader(data)
-        header = next(csvReader)
-        for i in csvReader:
-            c += 1
-        if (c == 0):
-            return True
-
-def expirationWarning():
-    with open('data/data.csv', mode = 'r', encoding='utf-8') as data:
-        listOfAllContent = []
-        remainingTime = []
-        csvReader = csv.reader(data)
-        headerData = next(csvReader)
-        for row in csvReader:
-            listOfAllContent.append(row)     
-        for i in listOfAllContent:
-            name = i[0]
-            dia = int(i[2][0:2])
-            mes = int(i[2][2:4])
-            ano = int(i[2][4:])
-            eDate = datetime(ano, mes, dia)
-            currentDate = datetime.now()
-            dif = eDate - currentDate
-            remainingTime.append([name,dif.days + 1]) 
-        for i in remainingTime:
-            if i[1] <= 3:
-                print(C.FAIL + "ALERTA, ALIMENTO(S) PRÓXIMO DA VALIDADE:")
-                break
-            
-        for i in remainingTime:
-            if i[1] <= 3 and i[1] > 0: 
-                print(f"{i[0]} vence em {i[1]} dia(s)")
-            if i[1] == 0:
-                print(f"{i[0]} com prazo de validade hoje!")
-            if i[1] < 0:
-                print(f"{i[0]} venceu há {(-1)*i[1]} dia(s)")
-        print(C.ENDC)
-                  
-#Função insert já otimizada, com as mudanças propostas
-#Função insert já modificada para a não utilização de memória não-volátil
+'''
+#OTIMIZADO
+def isEmpty(header,items):
+    if len(items) == 0: return True
+    else: return False
+#OTIMIZADO
+def expirationWarning(header,items):
+    current = datetime.now()
+    listNamesAndExp = [[i[0],(datetime(int(i[2][4:]),int(i[2][2:4]),int(i[2][0:2])) - current).days + 1] for i in items]
+    #remainingT = [i[1].days + 1 for i in listNamesAndExp]
+    for i in listNamesAndExp:
+        if i[1] <= 3:
+            print(C.FAIL + "ALERTA, ALIMENTO(S) PRÓXIMO DA VALIDADE:")
+            break
+    for i in listNamesAndExp:
+        if i[1] <= 3 and i[1] > 0: 
+            print(f"{i[0]} vence em {i[1]} dia(s)")
+        if i[1] == 0:
+            print(f"{i[0]} com prazo de validade hoje!")
+        if i[1] < 0:
+            print(f"{i[0]} venceu há {(-1)*i[1]} dia(s)")                 
+#OTIMIZADO
 def insert(header,items):
-    verifyFile()
     nome = False
     quantidade = False
     boolValidade = False
@@ -152,104 +125,60 @@ def insert(header,items):
             print("")
             print(C.FAIL + "RETORNANDO AO MENU PRINCIPAL..." + C.ENDC)
             return True
-#PRECISO REVER -> OTIMIZAR E RETIRAR ATUAÇÃO NA MEMÓRIA
+#OTIMIZADO -> NECESSITA AINDA ADICIONAR A OPÇÃO DE REMOÇÃO PARCIAL
 def remove(header,items):
-    if isEmpty(): return print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
-    name = False
-    quantity = False
-    remainingQnt = False
-    listOfAllContent = []
-    equalName = []
-    listId = []
-    rowToRemove = []
-    newFile = []
-    header = []
-    count = 0
-    while True:
-        try:
-            if not name:
-                print(C.OKGREEN + f"Digite o nome do produto a ser {C.FAIL}removido{C.ENDC}:" + C.ENDC)
-                value = input(">>> ")
-                if value == "":
-                    print(C.FAIL + "DIGITE UM NOME VÁLIDO!" + C.ENDC)
-                    continue
-                else:
-                    name = value
-                    with open('data/data.csv', 'r', encoding='utf-8') as data:
-                        csvReader = csv.reader(data)
-                        header = next(csvReader) 
-                        nameExist = False 
-                        for row in csvReader:
-                            listOfAllContent.append(row)
-                            if row[0] == name:
-                                quantity = row[1]
-                                nameExist = True
-                                count += 1
-                                equalName.append([row[0],row[1],row[2],row[4]])
-                                listId.append(row[4])
-                                rowToRemove.append(row)
-            #Falta terminar funcionalidade de remover alguma quantidade
-            #Código muito mal otimizado
-            if not(remainingQnt):
-                print(C.OKGREEN + f"Temos {quantity} de {name}, quanto deve ser {C.FAIL}removido{C.ENDC}?" + C.ENDC)
-                value = float(input(">>> "))   
-                remainingQnt = float(quantity) - value       
-            if count > 1:
-                table = tabulate.tabulate(equalName ,headers=['Nome','Quantidade', 'Validade', 'ID'], tablefmt= "pipe", colalign=('center','center','center','center'))
-                print(C.WARNING + table + C.ENDC)
-                print("")
-                
-                print(C.OKGREEN + "Digite o ID do produto que deseja remover:" + C.ENDC)
-                idValue = int(input(">>> "))
-                if str(idValue) not in listId:
-                    print(C.FAIL + "DIGITE UM ID VÁLIDO" + C.ENDC)
-                    continue
-                else:
-                    print(f"{C.FAIL}Removendo{C.ENDC} {C.OKGREEN}{name}{C.ENDC}")
-                    for i in rowToRemove:
-                        if i[4] == str(idValue):
-                            rowToRemove = []
-                            rowToRemove.append(i)
-                    newFile = [row for row in listOfAllContent if rowToRemove[0][4] not in row[4]]
-                    newFile.insert(0,header)
-                    
-                    with open("data/data.csv", "w", newline="") as file:
-                        writer = csv.writer(file)
-                        writer.writerows(newFile)
-                    return
-
-            else:
-                print(f"{C.FAIL}Removendo{C.ENDC} {C.OKGREEN}{name}{C.ENDC}")
-                newFile = [row for row in listOfAllContent if rowToRemove[0][4] not in row[4]]
-                newFile.insert(0,header)                   
-                with open("data/data.csv", "w", newline="") as file:
-                    writer = csv.writer(file)
-                    writer.writerows(newFile)
-                return
-            
-                    
-
-        except ValueError:
-            print(C.FAIL + "INPUT INVÁLIDO, POR FAVOR TENTE NOVAMENTE" + C.ENDC)
-            time.sleep(0.8)
-            clearT()
-        except KeyboardInterrupt:
-            print("")
-            print(C.FAIL + "RETORNANDO AO MENU PRINCIPAL..." + C.ENDC)
-            return True
-        except IndexError:
-            print("")
-            clearT()
-            print(C.FAIL + "RETORNE E DIGITE UM VALOR VÁLIDO" + C.ENDC)
-            time.sleep(1)
-            clearT()
-            return
-#PRECISO REVER -> OTIMIZAR E RETIRAR ATUAÇÃO NA MEMÓRIA
-def getProducts(header,items):
-    if isEmpty():
+    if isEmpty(header,items): 
         print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
-        return
+        return header,items
+    print(C.OKGREEN + "PRODUTOS DISPONÍVEIS: \n" + C.ENDC)
+    getProducts(header,items)
+    print("")
+    try:    
+        while True:
+            idList = [int(i[4]) for i in items]
+            removeId = getValidInput(C.OKGREEN + f"Digite o ID do produto a ser {C.FAIL}removido:\n{C.ENDC}{C.OKGREEN}>>> " + C.ENDC,int,C.FAIL + "DIGITE UM INTEIRO QUE REPRESENTE UM ID" + C.ENDC)
+            if removeId not in idList:
+                print(C.FAIL + "DIGITE UM ID DISPONÍVEL" + C.ENDC)
+                time.sleep(0.8)
+                continue
+            index = idList.index(removeId)
+            items.pop(index)
+            if not isEmpty(header,items):
+                keep = getValidInput(C.OKGREEN + f"Pressione qualquer tecla para sair, digite {C.FAIL}(r){C.ENDC}{C.OKGREEN} para continuar {C.FAIL}removendo{C.ENDC}{C.OKGREEN}:\n>>> " + C.ENDC, str)
+                if keep == 'r':
+                    print("")
+                    getProducts(header,items)
+                    print("")
+                    continue
+            
+            return header,items
 
+    except ValueError:
+        print(C.FAIL + "INPUT INVÁLIDO, POR FAVOR TENTE NOVAMENTE" + C.ENDC)
+        time.sleep(0.8)
+        clearT()
+    except KeyboardInterrupt:
+        print("")
+        print(C.FAIL + "RETORNANDO AO MENU PRINCIPAL..." + C.ENDC)
+        return True
+    except IndexError:
+        print("")
+        clearT()
+        print(C.FAIL + "RETORNE E DIGITE UM VALOR VÁLIDO" + C.ENDC)
+        time.sleep(1)
+        clearT()
+        return True
+#OTIMIZADO
+def getProducts(header,items):
+    if isEmpty(header,items):
+        print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
+        return header,items
+    newHeaderP = (header[0], header[1], header[4])
+    listOfNamesAndQnt = []
+    poss = ['gramas','itens','mililitros']
+    for i in items:
+        listOfNamesAndQnt.append([i[0],i[1] + f" {poss[int(i[3])]}",i[4]])
+    '''
     with open('data/data.csv', mode = 'r', encoding='utf-8') as data:
         listOfAllContent = []
         listOfNamesAndQnt = []
@@ -272,15 +201,18 @@ def getProducts(header,items):
                 l.append(f'{i[1]} mililitros')
 
             listOfNamesAndQnt.append(l)
-
-        table = tabulate.tabulate(listOfNamesAndQnt,headers=header, tablefmt= "pipe", colalign=('center','center'))
-        print(C.WARNING + table + C.ENDC)
-#PRECISO REVER -> OTIMIZAR E RETIRAR ATUAÇÃO NA MEMÓRIA
+    '''
+    table = tabulate.tabulate(listOfNamesAndQnt,headers=newHeaderP, tablefmt= "pipe", colalign=('center','center'))
+    print(C.WARNING + table + C.ENDC)
+    return header,items
+#OTIMIZADO
 def getExpirationDate(header,items):
-    if isEmpty():
+    if isEmpty(header,items):
         print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
         return
-    
+    newHeaderE = (header[0],"Dia","Mês","Ano",header[4])
+    listOfExpiration = [[i[0],i[2][0:2],i[2][2:4],i[2][4:],i[4]] for i in items]
+    '''
     with open('data/data.csv', mode = 'r', encoding='utf-8') as data:
         listOfAllContent = []
         listOfExpiration = []
@@ -303,15 +235,25 @@ def getExpirationDate(header,items):
             l.append(ano)
             listOfExpiration.append(l)
             
-        
-        table = tabulate.tabulate(listOfExpiration,headers=header, tablefmt= "pipe", colalign=('center','center','center', 'center'))
-        print(C.WARNING + table + C.ENDC)
+        '''
+    table = tabulate.tabulate(listOfExpiration,headers=newHeaderE, tablefmt= "pipe", colalign=('center','center','center', 'center'))
+    print(C.WARNING + table + C.ENDC)
+    return header,items
 
 def getRoutine():
     pass
 
 def getList():
     pass
+
+#FUNÇÃO RESPONSÁVEL POR LER OS DADOS DO ARQUIVO
+def readFile(header,items):
+    with open("data/data.csv", mode = 'r', encoding='utf-8') as data:
+        reader = csv.reader(data)
+        header = tuple(next(reader))
+        for row in reader:
+            items.append(row)
+    return header,items
 #FUNÇÃO QUE SERÁ RESPONSÁVEL POR GRAVAR, AO FINAL DO PROGRAMA, TODOS OS NOVOS DADOS
 def writeInFile():
     pass
@@ -339,17 +281,14 @@ def main():
     }
     header = ()
     items = []
-    with open("data/data.csv", mode = 'r', encoding='utf-8') as data:
-        reader = csv.reader(data)
-        header = tuple(next(reader))
-        for row in reader:
-            items.append(row)
+    header,items = readFile(header,items)
     try:
         while True:
             try: 
                 print(C.OKBLUE + "BEM-VINDO AO SISTEMA DE ESTOQUE AUTOMÁTICO" + C.ENDC)
                 print("")
-                expirationWarning()
+                expirationWarning(header,items)
+                print("")
                 print(C.OKGREEN + "Escolha uma opção:"+ C.ENDC)
                 print("1 - Inserir")
                 print("2 - Remover")
@@ -358,7 +297,7 @@ def main():
                 print("5 - Rotina")
                 print("6 - Gerar lista")
                 print("7 - Sair do programa")
-                c = getValidInput(">>> ",int,C.FAIL + "ESCOLHA VALORES INTEIROS ENTRE 1 E 7" + C.ENDC)
+                c = getValidInput(C.OKGREEN + ">>> " + C.ENDC,int,C.FAIL + "ESCOLHA VALORES INTEIROS ENTRE 1 E 7" + C.ENDC)
                 
                 clearT()
                 value = choice[c](header,items)
@@ -369,7 +308,6 @@ def main():
                     input(">>> ")
                     clearT()
 
-
             except KeyError:
                 print(C.FAIL + "ESCOLHA UMA OPÇÃO VÁLIDA" + C.ENDC)
                 time.sleep(1)
@@ -377,9 +315,12 @@ def main():
                 continue  
             except KeyboardInterrupt:
                 return print(C.FAIL + "FORÇANDO PARADA..." + C.ENDC) 
+    
+    except FileNotFoundError:
+        return print(C.FAIL + f"ARQUIVO DE DADOS INEXISTENTE:" + C.ENDC)
+    
     except Exception as e:
         return print(C.FAIL + f"UNEXPECTED ERROR, PLEASE RESTART THE SYSTEM: {e}" + C.ENDC)
         
-
 if __name__ == '__main__':
     main()
