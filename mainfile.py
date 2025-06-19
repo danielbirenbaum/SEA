@@ -73,7 +73,8 @@ def expirationWarning():
         print(C.ENDC)
                   
 #Função insert já otimizada, com as mudanças propostas
-def insert():
+#Função insert já modificada para a não utilização de memória não-volátil
+def insert(header,items):
     verifyFile()
     nome = False
     quantidade = False
@@ -110,15 +111,22 @@ def insert():
                     continue
             if not boolValidade:
                 dia = getValidInput(C.OKCYAN + "Dia:\n>>> " + C.ENDC, str)
-                mes = getValidInput(C.OKCYAN +"Mês:\n>>> " + C.ENDC, str)
+                mes = getValidInput(C.OKCYAN + "Mês:\n>>> " + C.ENDC, str)
                 ano = getValidInput(C.OKCYAN +"Ano:\n>>> " + C.ENDC, str)
                 date = f"{dia}{mes}{ano}"
-
+                boolValidade = True
+        
             newRow.append(str(nome))
             newRow.append(str(quantidade))
             newRow.append(str(date))
             newRow.append(str(quantificavel - 1))
-            count = 0
+            countId = 0
+            for i in items:
+                if int(i[4]) >= countId:
+                    countId = int(i[4]) + 1
+            newRow.append(str(countId))
+            items.append(newRow)
+            '''
             with open('data/data.csv', mode='r', encoding='utf-8') as data:
                 csvReader = csv.reader(data)
                 header = next(csvReader)
@@ -132,9 +140,10 @@ def insert():
             with open('data/data.csv', mode = 'a', encoding='utf-8', newline='') as data:
                 writer = csv.writer(data, delimiter=',')
                 writer.writerow(newRow)
-                    
-            
-            break
+            '''     
+            return header,items
+        except IndexError as ind:
+            print(C.FAIL + f"Erro: {ind}" + C.ENDC)
         except ValueError:
             print(C.FAIL + "INPUT INVÁLIDO, POR FAVOR TENTE NOVAMENTE" + C.ENDC)
             time.sleep(0.8)
@@ -142,9 +151,9 @@ def insert():
         except KeyboardInterrupt:
             print("")
             print(C.FAIL + "RETORNANDO AO MENU PRINCIPAL..." + C.ENDC)
-            return
-
-def remove():
+            return True
+#PRECISO REVER -> OTIMIZAR E RETIRAR ATUAÇÃO NA MEMÓRIA
+def remove(header,items):
     if isEmpty(): return print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
     name = False
     quantity = False
@@ -227,7 +236,7 @@ def remove():
         except KeyboardInterrupt:
             print("")
             print(C.FAIL + "RETORNANDO AO MENU PRINCIPAL..." + C.ENDC)
-            return
+            return True
         except IndexError:
             print("")
             clearT()
@@ -235,8 +244,8 @@ def remove():
             time.sleep(1)
             clearT()
             return
-
-def getProducts():
+#PRECISO REVER -> OTIMIZAR E RETIRAR ATUAÇÃO NA MEMÓRIA
+def getProducts(header,items):
     if isEmpty():
         print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
         return
@@ -266,9 +275,8 @@ def getProducts():
 
         table = tabulate.tabulate(listOfNamesAndQnt,headers=header, tablefmt= "pipe", colalign=('center','center'))
         print(C.WARNING + table + C.ENDC)
-
-
-def getExpirationDate():
+#PRECISO REVER -> OTIMIZAR E RETIRAR ATUAÇÃO NA MEMÓRIA
+def getExpirationDate(header,items):
     if isEmpty():
         print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
         return
@@ -304,69 +312,73 @@ def getRoutine():
 
 def getList():
     pass
+#FUNÇÃO QUE SERÁ RESPONSÁVEL POR GRAVAR, AO FINAL DO PROGRAMA, TODOS OS NOVOS DADOS
+def writeInFile():
+    pass
 
+def finish(header,items):
+    clearT()
+    print(C.FAIL + "FECHANDO.." + C.ENDC)
+    time.sleep(0.8)
+    clearT()
+    return 'G7f#Lp29$Xq!dRb'
+
+#Função mais mais limpa com a utilização de dicionário para controle de chamada de função
+#Reformulação do código: menos acessos a memória não-volátil
 def main(): 
-    online = True
-    while online:
-        print(C.OKBLUE + "BEM-VINDO AO SISTEMA DE ESTOQUE AUTOMÁTICO" + C.ENDC)
-        print("")
-        expirationWarning()
-        print(C.OKGREEN + "Escolha uma opção:"+ C.ENDC)
-        print("1 - Inserir")
-        print("2 - Remover")
-        print("3 - Produtos")
-        print("4 - Validades")
-        print("5 - Rotina")
-        print("6 - Gerar lista")
-        print("7 - Sair do programa")
-        choice = input(">>> ")
-        
-        
-        if choice == '7':
-            clearT()
-            print(C.FAIL + "FECHANDO.." + C.ENDC)
-            time.sleep(0.8)
-            clearT()
-            online =  False
-        elif choice == '1':
-            clearT()
-            insert()
-            print("")
-            print("Pressione enter para continuar")
-            input(">>> ")
-            clearT()
-        
-        elif choice == '2':
-            clearT()
-            remove()
-            print("")
-            print("Pressione enter para continuar")
-            input(">>>")
-            clearT()
-        elif choice == '3':
-            clearT()
-            getProducts()
-            print("")
-            print("Pressione enter para continuar")
-            input(">>> ")
-            clearT()
+    #A key é uma forma de saber quando o código deve ser finalizado
+    key = 'G7f#Lp29$Xq!dRb'
+    choice = {
+        1: insert,
+        2: remove,
+        3: getProducts,
+        4: getExpirationDate,
+        5: getRoutine,
+        6: getList,
+        7: finish
+    }
+    header = ()
+    items = []
+    with open("data/data.csv", mode = 'r', encoding='utf-8') as data:
+        reader = csv.reader(data)
+        header = tuple(next(reader))
+        for row in reader:
+            items.append(row)
+    try:
+        while True:
+            try: 
+                print(C.OKBLUE + "BEM-VINDO AO SISTEMA DE ESTOQUE AUTOMÁTICO" + C.ENDC)
+                print("")
+                expirationWarning()
+                print(C.OKGREEN + "Escolha uma opção:"+ C.ENDC)
+                print("1 - Inserir")
+                print("2 - Remover")
+                print("3 - Produtos")
+                print("4 - Validades")
+                print("5 - Rotina")
+                print("6 - Gerar lista")
+                print("7 - Sair do programa")
+                c = getValidInput(">>> ",int,C.FAIL + "ESCOLHA VALORES INTEIROS ENTRE 1 E 7" + C.ENDC)
+                
+                clearT()
+                value = choice[c](header,items)
+                if value == key: break
+                else:
+                    print("")
+                    print("Pressione enter para continuar")
+                    input(">>> ")
+                    clearT()
 
-        elif choice == '4':
-            clearT()
-            getExpirationDate()
-            print("")
-            print("Pressione enter para continuar")
-            input(">>> ")
-            clearT()            
-        elif choice == '5':
-            getRoutine()
-        elif choice == '6':
-            getList()
-        else:
-            print(C.FAIL + "ERRO:")
-            print("ESCOLHA UMA OPÇÃO VÁLIDA" + C.ENDC)
-            time.sleep(1)
-            clearT()
+
+            except KeyError:
+                print(C.FAIL + "ESCOLHA UMA OPÇÃO VÁLIDA" + C.ENDC)
+                time.sleep(1)
+                clearT()
+                continue  
+            except KeyboardInterrupt:
+                return print(C.FAIL + "FORÇANDO PARADA..." + C.ENDC) 
+    except Exception as e:
+        return print(C.FAIL + f"UNEXPECTED ERROR, PLEASE RESTART THE SYSTEM: {e}" + C.ENDC)
         
 
 if __name__ == '__main__':
