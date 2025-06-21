@@ -1,3 +1,5 @@
+#Autor: Daniel Castro
+#Github: github.com/danielbirenbaum
 from colors import Color as C
 import time
 from datetime import datetime
@@ -19,14 +21,6 @@ def getValidInput(prompt,inputType,errorMessage = C.FAIL + "ENTRADA INVALIDA" + 
 # Função para limpar o terminal (Apenas windows)
 def clearT():
     os.system('cls')
-'''
-#Verifica se há uma linha vazia para poder escrever uma nova linha(código estava escrevendo na mesma linha)
-def verifyFile():
-    with open('data/data.csv', mode = 'r+', encoding='utf-8') as data:
-        content = data.read()
-        if not content.endswith('\n'):
-            data.write("\n")
-'''
 #OTIMIZADO
 def isEmpty(header,items):
     if len(items) == 0: return True
@@ -34,8 +28,14 @@ def isEmpty(header,items):
 #OTIMIZADO
 def expirationWarning(header,items):
     current = datetime.now()
+    #Linha pode parecer confusa, mas significa o seguinte:
+    #Para cada item na geladeira, vou colocar na lista o nome deste item como primeiro elemento e a quantidade de dias para vencer no segundo elemento
+    #isso é feito utilizando-se de alguns passos:
+    #o construtor datetime() vai instanciar um objeto do tipo datetime que pode ser usado para manipular tempo de maneira mais precisa
+    #depois vou subtrarir o current que seria o momento atual
+    #.days() irá pegar a quantidade de dias na diferença
+    #+1 apenas serve para fazer com que a diferença seja mais correta, ou seja, quando é falado uma data (linguisticamente)
     listNamesAndExp = [[i[0],(datetime(int(i[2][4:]),int(i[2][2:4]),int(i[2][0:2])) - current).days + 1] for i in items]
-    #remainingT = [i[1].days + 1 for i in listNamesAndExp]
     for i in listNamesAndExp:
         if i[1] <= 3:
             print(C.FAIL + "ALERTA, ALIMENTO(S) PRÓXIMO DA VALIDADE:")
@@ -87,6 +87,7 @@ def insert(header,items):
                 mes = getValidInput(C.OKCYAN + "Mês:\n>>> " + C.ENDC, str)
                 ano = getValidInput(C.OKCYAN +"Ano:\n>>> " + C.ENDC, str)
                 date = f"{dia}{mes}{ano}"
+                datetime(int(ano),int(mes),int(dia))
                 boolValidade = True
         
             newRow.append(str(nome))
@@ -99,26 +100,12 @@ def insert(header,items):
                     countId = int(i[4]) + 1
             newRow.append(str(countId))
             items.append(newRow)
-            '''
-            with open('data/data.csv', mode='r', encoding='utf-8') as data:
-                csvReader = csv.reader(data)
-                header = next(csvReader)
-                listOfAllContent = []
-                for row in csvReader:
-                    listOfAllContent.append(row)
-                for i in listOfAllContent:
-                    if (count < int(i[4])):
-                        count = int(i[4])
-            newRow.append(str(count + 1))
-            with open('data/data.csv', mode = 'a', encoding='utf-8', newline='') as data:
-                writer = csv.writer(data, delimiter=',')
-                writer.writerow(newRow)
-            '''     
+
             return header,items
         except IndexError as ind:
             print(C.FAIL + f"Erro: {ind}" + C.ENDC)
-        except ValueError:
-            print(C.FAIL + "INPUT INVÁLIDO, POR FAVOR TENTE NOVAMENTE" + C.ENDC)
+        except ValueError as vE:
+            print(C.FAIL + f"INPUT INVÁLIDO, POR FAVOR TENTE NOVAMENTE: {vE}" + C.ENDC)
             time.sleep(0.8)
             clearT()
         except KeyboardInterrupt:
@@ -178,30 +165,6 @@ def getProducts(header,items):
     poss = ['gramas','itens','mililitros']
     for i in items:
         listOfNamesAndQnt.append([i[0],i[1] + f" {poss[int(i[3])]}",i[4]])
-    '''
-    with open('data/data.csv', mode = 'r', encoding='utf-8') as data:
-        listOfAllContent = []
-        listOfNamesAndQnt = []
-        csvReader = csv.reader(data)
-        header = next(csvReader)
-        for row in csvReader:
-            listOfAllContent.append(row)
-                
-        for i in listOfAllContent:
-            l = []
-            l.append(i[0]) 
-            if i[3] == '1':
-                if int(i[1]) == 1:
-                    l.append(f'{i[1]} item')
-                else:
-                    l.append(f'{i[1]} itens')
-            elif i[3] == '0':
-                l.append(f'{i[1]} gramas')
-            else:
-                l.append(f'{i[1]} mililitros')
-
-            listOfNamesAndQnt.append(l)
-    '''
     table = tabulate.tabulate(listOfNamesAndQnt,headers=newHeaderP, tablefmt= "pipe", colalign=('center','center'))
     print(C.WARNING + table + C.ENDC)
     return header,items
@@ -212,41 +175,23 @@ def getExpirationDate(header,items):
         return
     newHeaderE = (header[0],"Dia","Mês","Ano",header[4])
     listOfExpiration = [[i[0],i[2][0:2],i[2][2:4],i[2][4:],i[4]] for i in items]
-    '''
-    with open('data/data.csv', mode = 'r', encoding='utf-8') as data:
-        listOfAllContent = []
-        listOfExpiration = []
-        csvReader = csv.reader(data)
-        headerData = next(csvReader)
-        header = ["Nome","Dia", "Mês", "Ano"]
-        
-        for row in csvReader:
-            listOfAllContent.append(row)
-              
-        for i in listOfAllContent:
-            l = []
-            nome = i[0]
-            dia = i[2][0:2]
-            mes = i[2][2:4]
-            ano = i[2][4:]
-            l.append(nome)
-            l.append(dia)
-            l.append(mes)
-            l.append(ano)
-            listOfExpiration.append(l)
-            
-        '''
     table = tabulate.tabulate(listOfExpiration,headers=newHeaderE, tablefmt= "pipe", colalign=('center','center','center', 'center'))
     print(C.WARNING + table + C.ENDC)
     return header,items
-
-def getRoutine():
+#PENDENTE
+def getRoutine(header,items):    
+    # if not isEmpty(header,items): 
+    #     print(C.OKGREEN + "ITENS NA GELADEIRA: " + C.ENDC)
+    #     print("")
+    #     getProducts(header,items)
+    # else: 
+    #     print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
+    #     print("")
     pass
-
+#PENDENTE
 def getList():
     pass
-
-#FUNÇÃO RESPONSÁVEL POR LER OS DADOS DO ARQUIVO
+#OTIMIZADO: FUNÇÃO RESPONSÁVEL POR LER OS DADOS DO ARQUIVO
 def readFile(header,items):
     with open("data/data.csv", mode = 'r', encoding='utf-8') as data:
         reader = csv.reader(data)
@@ -254,22 +199,28 @@ def readFile(header,items):
         for row in reader:
             items.append(row)
     return header,items
-#FUNÇÃO QUE SERÁ RESPONSÁVEL POR GRAVAR, AO FINAL DO PROGRAMA, TODOS OS NOVOS DADOS
-def writeInFile():
-    pass
-
+#OTIMIZADO
+def writeInFile(header,items):
+    data = []
+    data.append(list(header))
+    for i in items:
+        data.append(i)
+    with open("data/data.csv",mode='w',newline='',encoding='utf-8') as fileData:
+        writer = csv.writer(fileData)
+        writer.writerows(data)
+#OTIMIZADO
 def finish(header,items):
     clearT()
     print(C.FAIL + "FECHANDO.." + C.ENDC)
     time.sleep(0.8)
     clearT()
     return 'G7f#Lp29$Xq!dRb'
-
-#Função mais mais limpa com a utilização de dicionário para controle de chamada de função
-#Reformulação do código: menos acessos a memória não-volátil
+#Funcao principal
 def main(): 
     #A key é uma forma de saber quando o código deve ser finalizado
+    #Utilizado pois inicialmente eu havia pensado em usar boleanos, mas depois percebi que o uso de boleanos poderia ser aplicado em outra coisa
     key = 'G7f#Lp29$Xq!dRb'
+    #Uso do dicionário (map) ao invés de vários if statements, embeleza o código
     choice = {
         1: insert,
         2: remove,
@@ -281,6 +232,9 @@ def main():
     }
     header = ()
     items = []
+    #Apesar de 'items' ser "passado por referência", 'header' é uma tupla, logo modificar 'header' em uma função não a modificará aqui
+    #Deixo o fato de 'items' ser 'passado por referência' aqui explícito, pois foi algo amplamente usado no código
+    #'items' é modificado nas funções e eu não me preocupo com o escopo, logo, ele é modificado aqui também
     header,items = readFile(header,items)
     try:
         while True:
@@ -315,6 +269,11 @@ def main():
                 continue  
             except KeyboardInterrupt:
                 return print(C.FAIL + "FORÇANDO PARADA..." + C.ENDC) 
+        #Ao final do código, há o update no arquivo .csv
+        writeInFile(header,items)
+    
+    except FileExistsError:
+        return print(C.FAIL + f"ARQUIVO DE DADOS JÁ EXISTENTE (SOBREPOSIÇÃO):" + C.ENDC)
     
     except FileNotFoundError:
         return print(C.FAIL + f"ARQUIVO DE DADOS INEXISTENTE:" + C.ENDC)
