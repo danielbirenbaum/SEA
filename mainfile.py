@@ -6,7 +6,6 @@ from datetime import datetime
 import csv
 import os
 import tabulate # type: ignore
-import platform
 
 #Funcao para pegar um input e tratá-lo
 #O tratamento NÃO É ESPECIAL, há apenas a verificação do tipo, logo, pode ser necessário verificar outros fatores
@@ -38,7 +37,7 @@ def expirationWarning(header,items):
     listNamesAndExp = [[i[0],(datetime(int(i[2][4:]),int(i[2][2:4]),int(i[2][0:2])) - current).days + 1] for i in items]
     for i in listNamesAndExp:
         if i[1] <= 3:
-            print(C.FAIL + "ALERTA, ALIMENTO(S) PRÓXIMO DA VALIDADE:")
+            print(C.FAIL + "ALERTA, ALIMENTO(S) PRÓXIMO(S) DA VALIDADE:")
             break
     for i in listNamesAndExp:
         if i[1] <= 3 and i[1] > 0: 
@@ -48,6 +47,33 @@ def expirationWarning(header,items):
         if i[1] < 0:
             print(f"{i[0]} venceu há {(-1)*i[1]} dia(s)")                 
 #OTIMIZADO
+def getName(name):
+    nome = input(C.OKCYAN + "Digite o nome do produto:\n>>> " + C.ENDC).strip()
+    if not nome:
+        print(C.FAIL + "DIGITE UM NOME!" + C.ENDC)
+        time.sleep(0.8)
+        clearT()
+        return False
+    else: return nome
+def quantityType(quantificavel):
+    print(C.OKCYAN + "Produto medido em gramatura ou em quantidade?")
+    print("1 - Gramas\n2 - Quantidade\n3 - Mililitros" + C.ENDC)
+    quantificavel = getValidInput(C. OKCYAN + ">>> " + C.ENDC ,int, C.FAIL + "DIGITE 1, 2 ou 3" + C.ENDC)
+    if quantificavel not in [1,2,3]:
+        print(C.FAIL + "DIGITE 1, 2 ou 3" + C.ENDC)
+        time.sleep(0.8)
+        clearT()
+        return False
+    else: return quantificavel
+def getQuantity(quantidade,quantificavel,nome):
+    unidade = ["gramas", "itens", "mililitros"][quantificavel - 1]
+    quantidade = getValidInput(C.OKCYAN + f"Quantos {unidade} de {nome}?\n>>> " + C.ENDC, int if quantificavel == 2 else float)
+    if quantidade <= 0:
+        print(C.FAIL + f"NÃO É POSSÍVEL COLOCAR ESSA QUANTIDADE DE {unidade.upper()}" + C.ENDC)
+        time.sleep(0.8)
+        quantidade = 0
+        return False
+    else: return quantidade
 def insert(header,items):
     nome = False
     quantidade = False
@@ -58,31 +84,18 @@ def insert(header,items):
     while True:
         try:
             if not nome:
-                nome = input(C.OKCYAN + "Digite o nome do produto:\n>>> " + C.ENDC).strip()
-                if not nome:
-                    print(C.FAIL + "DIGITE UM NOME!" + C.ENDC)
-                    time.sleep(0.8)
-                    clearT()
-                    continue
+                nome = getName(nome)
+                if not nome: continue
             if not quantificavel:
-                print(C.OKCYAN + "Produto medido em gramatura ou em quantidade?")
-                print("1 - Gramas\n2 - Quantidade\n3 - Mililitros" + C.ENDC)
-                quantificavel = getValidInput(C. OKCYAN + ">>> " + C.ENDC ,int, C.FAIL + "DIGITE 1, 2 ou 3" + C.ENDC)
-                if quantificavel not in [1,2,3]:
-                    quantificavel = False
-                    print(C.FAIL + "DIGITE 1, 2 ou 3" + C.ENDC)
-                    time.sleep(0.8)
-                    clearT()
-                    continue
+                quantificavel = quantityType(quantificavel)
+                if not quantificavel: continue
             if not quantidade:
-                unidade = ["gramas", "itens", "mililitros"][quantificavel - 1]
-                quantidade = getValidInput(C.OKCYAN + f"Quantos {unidade} de {nome}?\n>>> " + C.ENDC, int if quantificavel == 2 else float)
-                if quantidade <= 0:
-                    print(C.FAIL + f"NÃO É POSSÍVEL COLOCAR ESSA QUANTIDADE DE {unidade.upper()}" + C.ENDC)
-                    time.sleep(0.8)
-                    quantidade = 0
-                    continue
+                quantidade = getQuantity(quantidade,quantificavel,nome)
+                if not quantidade: continue
             if not boolValidade:
+                #Datas de acordo com os padrões da ABNT, norma NBR 5892:2019/ISO 8601-2-2019
+                #Não são utilizados os hífens (-) no csv para evitar erros de leitura
+                print(C.OKGREEN + f"Digite a validade do produto:\nPara meses e dias menores que 10, digite com um zero à esquerda, por exemplo:\nDia: 03\nMes: 09\nAno: 2025{C.ENDC}")
                 dia = getValidInput(C.OKCYAN + "Dia:\n>>> " + C.ENDC, str)
                 mes = getValidInput(C.OKCYAN + "Mês:\n>>> " + C.ENDC, str)
                 ano = getValidInput(C.OKCYAN +"Ano:\n>>> " + C.ENDC, str)
@@ -112,7 +125,7 @@ def insert(header,items):
             print("")
             print(C.FAIL + "RETORNANDO AO MENU PRINCIPAL..." + C.ENDC)
             return True
-#OTIMIZADO -> NECESSITA AINDA ADICIONAR A OPÇÃO DE REMOÇÃO PARCIAL
+#OTIMIZADO 
 def remove(header,items):
     if isEmpty(header,items): 
         print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
@@ -129,7 +142,15 @@ def remove(header,items):
                 time.sleep(0.8)
                 continue
             index = idList.index(removeId)
-            items.pop(index)
+            #items.pop(index)
+            quantity = getValidInput(C.OKGREEN + f"Digite a quantidade a ser {C.FAIL}removido:\n{C.ENDC}{C.OKGREEN}>>> " + C.ENDC,int if items[index][3] == '1' else float ,C.FAIL + "DIGITE UM VALOR VÁLIDO" + C.ENDC)
+            
+            if (float(items[index][1]) - quantity < 0 or quantity <= 0): raise ValueError
+            elif float(items[index][1]) - quantity == 0: items.pop(index)
+            else: 
+                if (items[index][3] == '1'): items[index][1] = str(int(items[index][1]) - quantity)
+                else: items[index][1] = str(float(items[index][1]) - quantity)
+        
             if not isEmpty(header,items):
                 keep = getValidInput(C.OKGREEN + f"Pressione qualquer tecla para sair, digite {C.FAIL}(r){C.ENDC}{C.OKGREEN} para continuar {C.FAIL}removendo{C.ENDC}{C.OKGREEN}:\n>>> " + C.ENDC, str)
                 if keep == 'r':
@@ -178,19 +199,6 @@ def getExpirationDate(header,items):
     table = tabulate.tabulate(listOfExpiration,headers=newHeaderE, tablefmt= "pipe", colalign=('center','center','center', 'center'))
     print(C.WARNING + table + C.ENDC)
     return header,items
-#PENDENTE
-def getRoutine(header,items):    
-    # if not isEmpty(header,items): 
-    #     print(C.OKGREEN + "ITENS NA GELADEIRA: " + C.ENDC)
-    #     print("")
-    #     getProducts(header,items)
-    # else: 
-    #     print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
-    #     print("")
-    pass
-#PENDENTE
-def getList():
-    pass
 #OTIMIZADO: FUNÇÃO RESPONSÁVEL POR LER OS DADOS DO ARQUIVO
 def readFile(header,items):
     with open("data/data.csv", mode = 'r', encoding='utf-8') as data:
@@ -220,15 +228,13 @@ def main():
     #A key é uma forma de saber quando o código deve ser finalizado
     #Utilizado pois inicialmente eu havia pensado em usar boleanos, mas depois percebi que o uso de boleanos poderia ser aplicado em outra coisa
     key = 'G7f#Lp29$Xq!dRb'
-    #Uso do dicionário (map) ao invés de vários if statements, embeleza o código
+    #Uso do dicionário (map) ao invés de vários if statements, torna o código mais nobre
     choice = {
         1: insert,
         2: remove,
         3: getProducts,
         4: getExpirationDate,
-        5: getRoutine,
-        6: getList,
-        7: finish
+        5: finish
     }
     header = ()
     items = []
@@ -248,11 +254,8 @@ def main():
                 print("2 - Remover")
                 print("3 - Produtos")
                 print("4 - Validades")
-                print("5 - Rotina")
-                print("6 - Gerar lista")
-                print("7 - Sair do programa")
-                c = getValidInput(C.OKGREEN + ">>> " + C.ENDC,int,C.FAIL + "ESCOLHA VALORES INTEIROS ENTRE 1 E 7" + C.ENDC)
-                
+                print("5 - Sair do programa")
+                c = getValidInput(C.OKGREEN + ">>> " + C.ENDC,int,C.FAIL + "ESCOLHA VALORES INTEIROS ENTRE 1 E 5" + C.ENDC)  
                 clearT()
                 value = choice[c](header,items)
                 if value == key: break
@@ -270,6 +273,7 @@ def main():
             except KeyboardInterrupt:
                 return print(C.FAIL + "FORÇANDO PARADA..." + C.ENDC) 
         #Ao final do código, há o update no arquivo .csv
+        #Em tempo de execução, não há atualizações constantes no arquivo. Há apenas a manipulação de dados conforme visto em aula
         writeInFile(header,items)
     
     except FileExistsError:
