@@ -20,11 +20,11 @@ def getValidInput(prompt,inputType,errorMessage = C.FAIL + "ENTRADA INVALIDA" + 
 # Função para limpar o terminal (Apenas windows)
 def clearT():
     os.system('cls')
-#OTIMIZADO
+#Verifica se está vazio a geladeira
 def isEmpty(header,items):
     if len(items) == 0: return True
     else: return False
-#OTIMIZADO
+#Função que mostra os itens próximos da validade
 def expirationWarning(header,items):
     current = datetime.now()
     #Linha pode parecer confusa, mas significa o seguinte:
@@ -46,7 +46,7 @@ def expirationWarning(header,items):
             print(f"{i[0]} com prazo de validade hoje!")
         if i[1] < 0:
             print(f"{i[0]} venceu há {(-1)*i[1]} dia(s)")                 
-#OTIMIZADO
+#Funções de inserção; Pegar o nome, o id quantificavel, a quantidade e a função insert
 def getName(name):
     nome = input(C.OKCYAN + "Digite o nome do produto:\n>>> " + C.ENDC).strip()
     if not nome:
@@ -125,7 +125,7 @@ def insert(header,items):
             print("")
             print(C.FAIL + "RETORNANDO AO MENU PRINCIPAL..." + C.ENDC)
             return True
-#OTIMIZADO 
+#Funcao responsavel por remover itens da geladeira
 def remove(header,items):
     if isEmpty(header,items): 
         print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
@@ -176,7 +176,7 @@ def remove(header,items):
         time.sleep(1)
         clearT()
         return True
-#OTIMIZADO
+#Mostra os produtos presentes
 def getProducts(header,items):
     if isEmpty(header,items):
         print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
@@ -189,7 +189,7 @@ def getProducts(header,items):
     table = tabulate.tabulate(listOfNamesAndQnt,headers=newHeaderP, tablefmt= "pipe", colalign=('center','center'))
     print(C.WARNING + table + C.ENDC)
     return header,items
-#OTIMIZADO
+#Mostra as validades dos produtos presentes
 def getExpirationDate(header,items):
     if isEmpty(header,items):
         print(C.FAIL + "GELADEIRA VAZIA" + C.ENDC)
@@ -199,7 +199,7 @@ def getExpirationDate(header,items):
     table = tabulate.tabulate(listOfExpiration,headers=newHeaderE, tablefmt= "pipe", colalign=('center','center','center', 'center'))
     print(C.WARNING + table + C.ENDC)
     return header,items
-#OTIMIZADO: FUNÇÃO RESPONSÁVEL POR LER OS DADOS DO ARQUIVO
+#Lê o arquivo e pega os dados, a primeira linha é considerada o cabeçalho
 def readFile(header,items):
     with open("data/data.csv", mode = 'r', encoding='utf-8') as data:
         reader = csv.reader(data)
@@ -207,7 +207,7 @@ def readFile(header,items):
         for row in reader:
             items.append(row)
     return header,items
-#OTIMIZADO
+#Sobrescreve o arquivo
 def writeInFile(header,items):
     data = []
     data.append(list(header))
@@ -216,7 +216,7 @@ def writeInFile(header,items):
     with open("data/data.csv",mode='w',newline='',encoding='utf-8') as fileData:
         writer = csv.writer(fileData)
         writer.writerows(data)
-#OTIMIZADO
+#Função que finaliza o código
 def finish(header,items):
     clearT()
     print(C.FAIL + "FECHANDO.." + C.ENDC)
